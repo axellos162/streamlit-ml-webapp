@@ -1,0 +1,62 @@
+import streamlit as st
+import pandas as pd
+from sklearn.datasets import load_breast_cancer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, confusion_matrix
+import seaborn as sns
+
+# Load the Breast Cancer dataset
+breast_cancer = load_breast_cancer()
+X = pd.DataFrame(breast_cancer.data, columns=breast_cancer.feature_names)
+y = pd.Series(breast_cancer.target)
+
+# Split the dataset into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Define the page layout
+st.set_page_config(page_title='Breast Cancer Classification', page_icon=':guardsman:', layout='wide')
+
+# Define the sidebar
+st.sidebar.title('Breast Cancer Classification')
+st.sidebar.write('Enter the parameters for the prediction')
+
+# Define the input parameters
+input_params = {}
+for col in X.columns:
+    input_params[col] = st.sidebar.slider(f'{col}', float(X[col].min()), float(X[col].max()), float(X[col].mean()))
+
+# Define the main page content
+st.title('Breast Cancer Classification')
+st.write('This web app uses a Random Forest Classifier to predict whether a tumor is benign or malignant based on various features.')
+
+# Show the input parameters
+st.write('## Input Parameters')
+input_df = pd.DataFrame(input_params, index=[0])
+st.write(input_df)
+
+# Train the model and make predictions on the input parameters
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
+y_pred = rf.predict(input_df)
+
+# Show the prediction result
+st.write('## Prediction Result')
+if y_pred[0] == 0:
+    st.write('The tumor is **benign**')
+else:
+    st.write('The tumor is **malignant**')
+
+# Show the model performance on the test set
+st.write('## Model Performance on Test Set')
+y_pred_test = rf.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred_test)
+cm = confusion_matrix(y_test, y_pred_test)
+sns.heatmap(cm, annot=True, cmap='Blues', fmt='g')
+st.pyplot()
+st.write('Accuracy:', accuracy)
+
+# Show the dataset
+st.write('## Dataset')
+st.write(X.join(y).head())
+
